@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeFlow AI - Algorithm Visualizer</title>
+    <script>
+        // Check if user is logged in, redirect to auth if not
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/auth';
+        }
+    </script>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+                <span class="logo-text">CodeFlow</span>
+                <span class="logo-ai">AI</span>
+            </div>
+        </div>
+        <nav class="header-nav">
+            <a href="#" class="nav-item active">Visualize</a>
+            <a href="#" class="nav-item" id="examples-link">Problems</a>
+            <a href="#" class="nav-item" id="help-link">Help</a>
+            <a href="/api/docs" class="nav-item" target="_blank">API</a>
+        </nav>
+        <div class="header-right">
+            <select id="language-select" class="language-select" title="Select Language">
+                <option value="python">Python</option>
+                <option value="javascript">JavaScript</option>
+                <option value="java">Java</option>
+                <option value="cpp">C++</option>
+                <option value="c">C</option>
+                <option value="csharp">C#</option>
+                <option value="go">Go</option>
+                <option value="rust">Rust</option>
+                <option value="typescript">TypeScript</option>
+                <option value="ruby">Ruby</option>
+                <option value="kotlin">Kotlin</option>
+                <option value="swift">Swift</option>
+            </select>
+            <select id="style-select" class="difficulty-select">
+                <option value="beginner">Easy</option>
+                <option value="intermediate">Medium</option>
+                <option value="advanced">Hard</option>
+            </select>
+            <div class="ai-status" id="ai-status" title="AI Status">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 011 1v3a1 1 0 01-1 1h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1H2a1 1 0 01-1-1v-3a1 1 0 011-1h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2z"/></svg>
+            </div>
+            <!-- Gamification Stats Button -->
+            <button class="stats-btn" id="stats-btn" title="Your Progress & Achievements">
+                <div class="xp-display">
+                    <svg class="xp-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <span id="header-xp">0</span>
+                </div>
+                <div class="level-badge" id="header-level">Lv.1</div>
+                <div class="streak-badge" id="header-streak" title="Daily Streak">
+                    <span>🔥</span>
+                    <span id="streak-count">0</span>
+                </div>
+            </button>
+            <button class="theme-toggle" id="theme-toggle" title="Toggle Dark/Light Theme">
+                <svg class="theme-icon sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"/>
+                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+                <svg class="theme-icon moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+                </svg>
+            </button>
+            <div class="user-dropdown" id="user-dropdown">
+                <button class="user-btn" id="user-btn">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+                    <span id="user-name">User</span>
+                </button>
+                <div class="dropdown-menu" id="dropdown-menu">
+                    <div class="dropdown-item user-email" id="user-email">email@example.com</div>
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item" id="logout-btn">Logout</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <main class="workspace">
+        <!-- Left: Code Editor -->
+        <div class="editor-panel">
+            <div class="panel-tabs">
+                <button class="tab active" id="code-tab">Code</button>
+                <button class="tab" id="desc-tab">Description</button>
+            </div>
+            <div class="editor-wrapper">
+                <div class="line-numbers" id="line-numbers"></div>
+                <textarea 
+                    id="code-editor" 
+                    class="code-editor" 
+                    spellcheck="false"
+                    placeholder="# Enter your code here (supports multiple languages)..."
+                ></textarea>
+            </div>
+            <div class="editor-controls">
+                <div class="input-row">
+                    <label>Test Input:</label>
+                    <input type="text" id="input-values" class="test-input" placeholder='{"arr": [5, 2, 8, 1]}'>
+                </div>
+                <div class="button-row">
+                    <button class="btn btn-secondary" id="clear-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                        Clear
+                    </button>
+                    <button class="btn btn-success" id="run-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        Run Code
+                    </button>
+                    <button class="btn btn-primary" id="analyze-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        Analyze
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center: Visualization -->
+        <div class="viz-panel">
+            <div class="viz-header">
+                <div class="viz-title">Execution Trace</div>
+                <div class="playback-controls">
+                    <button class="control-btn" id="step-back" title="Previous">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                    </button>
+                    <button class="control-btn play-btn" id="play-pause" title="Play/Pause">
+                        <svg viewBox="0 0 24 24" fill="currentColor" class="play-icon"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <svg viewBox="0 0 24 24" fill="currentColor" class="pause-icon" style="display:none"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>
+                    </button>
+                    <button class="control-btn" id="step-forward" title="Next">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                    </button>
+                    <div class="speed-control">
+                        <input type="range" id="speed-slider" min="0.5" max="3" step="0.5" value="1">
+                        <span id="speed-value">1x</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-track">
+                    <div class="progress-bar" id="progress-fill"></div>
+                </div>
+                <span class="step-counter"><span id="current-step">0</span> / <span id="total-steps">0</span></span>
+            </div>
+
+            <div class="viz-content" id="visualization-content">
+                <div class="viz-section">
+                    <div class="section-header">Current Execution</div>
+                    <pre class="code-highlight" id="current-code"><code>Click "Run Analysis" to start</code></pre>
+                </div>
+
+                <div class="viz-section">
+                    <div class="section-header">Variables</div>
+                    <div class="variables-table" id="variables-grid">
+                        <div class="empty-state">No variables</div>
+                    </div>
+                </div>
+
+                <div class="viz-section" id="array-section" style="display: none;">
+                    <div class="section-header">Array State</div>
+                    <div class="array-viz" id="array-container"></div>
+                    <div class="array-indices" id="array-indices"></div>
+                </div>
+
+                <div class="viz-section">
+                    <div class="section-header">Control Flow</div>
+                    <div class="flowchart" id="flowchart"></div>
+                </div>
+            </div>
+
+            <div class="timeline-container">
+                <div class="section-header">Timeline</div>
+                <div class="timeline" id="timeline"></div>
+            </div>
+
+            <!-- AI Explanation Section -->
+            <div class="viz-section ai-explanation-section">
+                <div class="section-header">
+                    <span>🤖 AI Explanation</span>
+                    <div class="complexity-inline">
+                        <span class="step-badge" id="step-badge">Step 0</span>
+                        <span class="step-type" id="step-type"></span>
+                        <span id="complexity-text" class="complexity-mini">O(?)</span>
+                    </div>
+                </div>
+                <div class="explanation-content">
+                    <p id="explanation-summary">Analyze code to see explanations...</p>
+                    <div class="explanation-details" id="explanation-details">
+                        <p id="explanation-detailed"></p>
+                        <p id="explanation-why" class="explanation-why"></p>
+                        <p id="explanation-notice" class="explanation-notice"></p>
+                        <p id="explanation-mistakes" class="explanation-mistakes"></p>
+                    </div>
+                </div>
+                <div class="complexity-details">
+                    <div class="complexity-details-header">
+                        <span>📊</span> Complexity Analysis
+                    </div>
+                    <div class="complexity-grid">
+                        <div class="complexity-item time">
+                            <span class="icon">⏱️</span>
+                            <div>
+                                <div class="complexity-label">Time</div>
+                                <span id="time-complexity" class="complexity-value">O(?)</span>
+                            </div>
+                        </div>
+                        <div class="complexity-item space">
+                            <span class="icon">💾</span>
+                            <div>
+                                <div class="complexity-label">Space</div>
+                                <span id="space-complexity" class="complexity-value">O(?)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p id="complexity-explanation" class="complexity-explanation"></p>
+                </div>
+            </div>
+
+            <!-- Output Section for Code Compiler -->
+            <div class="output-section" id="output-section">
+                <div class="section-header">
+                    <span>⚡ Output</span>
+                    <button class="clear-output-btn" id="clear-output-btn" title="Clear Output">Clear</button>
+                </div>
+                <div class="output-content" id="output-content">
+                    <span class="output-placeholder">Run your code to see output here...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: AI Assistant (Floating Panel) -->
+        <div class="ai-panel collapsed" id="ai-panel">
+            <div class="ai-header">
+                <svg viewBox="0 0 24 24" fill="currentColor" class="ai-icon"><path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 011 1v3a1 1 0 01-1 1h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1H2a1 1 0 01-1-1v-3a1 1 0 011-1h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2zM7.5 13a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm9 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM12 9a5 5 0 00-5 5v1h10v-1a5 5 0 00-5-5z"/></svg>
+                <span>AI Assistant</span>
+                <button class="ai-close-btn" id="ai-close-btn" title="Close AI Chat">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+
+            <div class="chat-container">
+                <div class="chat-header">
+                    <span>💬 AI Chat</span>
+                    <span class="ai-badge">Gemini</span>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <div class="message ai-message">
+                        <p>Hello! I'm your AI coding tutor. Ask me anything about your code - I can explain concepts, help debug, and answer programming questions!</p>
+                    </div>
+                </div>
+                <div class="chat-input-container">
+                    <input type="text" id="ask-input" class="chat-input" placeholder="Ask about your code...">
+                    <button class="send-btn" id="ask-btn">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Examples Modal -->
+    <div class="modal" id="examples-modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Algorithm Problems</h2>
+                <button class="close-btn" id="close-modal">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="language-filter">
+                    <button class="filter-btn active" data-lang="all">All</button>
+                    <button class="filter-btn" data-lang="python">Python</button>
+                    <button class="filter-btn" data-lang="javascript">JavaScript</button>
+                    <button class="filter-btn" data-lang="java">Java</button>
+                    <button class="filter-btn" data-lang="cpp">C++</button>
+                </div>
+                <div class="examples-grid" id="examples-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help/Tutorial Modal -->
+    <div class="modal" id="help-modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content help-modal-content">
+            <div class="modal-header">
+                <h2>How to Use CodeFlow AI</h2>
+                <button class="close-btn" id="close-help-modal">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <div class="modal-body help-body">
+                <!-- Quick Start Guide -->
+                <div class="help-section">
+                    <h3>Quick Start Guide</h3>
+                    <div class="steps-guide">
+                        <div class="step-item">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>Select Language</h4>
+                                <p>Choose your programming language from the dropdown menu in the header.</p>
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>Write or Paste Code</h4>
+                                <p>Enter your code in the editor or select from pre-built examples.</p>
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>Run or Analyze</h4>
+                                <p>Click "Run Code" to execute or "Analyze" to visualize step-by-step.</p>
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h4>Ask AI Questions</h4>
+                                <p>Use the floating AI chat button to ask questions about your code.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Keyboard Shortcuts -->
+                <div class="help-section">
+                    <h3>Keyboard Shortcuts</h3>
+                    <div class="shortcuts-grid">
+                        <div class="shortcut"><kbd>Ctrl</kbd> + <kbd>Enter</kbd><span>Run Code</span></div>
+                        <div class="shortcut"><kbd>Space</kbd><span>Play/Pause</span></div>
+                        <div class="shortcut"><kbd>←</kbd><span>Previous Step</span></div>
+                        <div class="shortcut"><kbd>→</kbd><span>Next Step</span></div>
+                        <div class="shortcut"><kbd>Ctrl</kbd> + <kbd>L</kbd><span>Clear Editor</span></div>
+                        <div class="shortcut"><kbd>Esc</kbd><span>Close Chat</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats/Gamification Modal -->
+    <div class="modal" id="stats-modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content stats-modal-content">
+            <div class="modal-header stats-modal-header">
+                <h2>🎮 Your Progress</h2>
+                <button class="close-btn" id="close-stats-modal">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <div class="modal-body stats-body">
+                <!-- XP and Level Section -->
+                <div class="stats-hero">
+                    <div class="level-circle">
+                        <span class="level-number" id="modal-level">1</span>
+                        <span class="level-label">LEVEL</span>
+                    </div>
+                    <div class="xp-info">
+                        <div class="xp-bar-container">
+                            <div class="xp-bar" id="modal-xp-bar" style="width: 0%"></div>
+                        </div>
+                        <div class="xp-text">
+                            <span id="modal-xp">0</span> / <span id="modal-xp-max">100</span> XP
+                        </div>
+                        <div class="xp-to-next">
+                            <span id="modal-xp-needed">100</span> XP to next level
+                        </div>
+                    </div>
+                    <div class="rank-display">
+                        <span class="rank-icon">🏆</span>
+                        <span class="rank-number">#<span id="modal-rank">1</span></span>
+                        <span class="rank-label">Rank</span>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card streak-card">
+                        <div class="stat-icon">🔥</div>
+                        <div class="stat-value" id="modal-streak">0</div>
+                        <div class="stat-label">Day Streak</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-value" id="modal-analyses">0</div>
+                        <div class="stat-label">Analyses</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">▶️</div>
+                        <div class="stat-value" id="modal-runs">0</div>
+                        <div class="stat-label">Code Runs</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💬</div>
+                        <div class="stat-value" id="modal-questions">0</div>
+                        <div class="stat-label">AI Questions</div>
+                    </div>
+                </div>
+
+                <!-- Languages Used -->
+                <div class="languages-section">
+                    <h3>🌐 Languages Used</h3>
+                    <div class="languages-list" id="modal-languages">
+                        <span class="no-languages">Start coding to track languages!</span>
+                    </div>
+                </div>
+
+                <!-- Achievements Section -->
+                <div class="achievements-section">
+                    <h3>🏅 Achievements (<span id="achievements-count">0</span>/<span id="achievements-total">15</span>)</h3>
+                    <div class="achievements-grid" id="achievements-grid">
+                        <!-- Achievements will be loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- Leaderboard Preview -->
+                <div class="leaderboard-section">
+                    <h3>🏆 Leaderboard</h3>
+                    <div class="leaderboard-list" id="leaderboard-list">
+                        <!-- Leaderboard entries will be loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- XP Toast Notification -->
+    <div class="xp-toast" id="xp-toast">
+        <span class="xp-toast-icon">⭐</span>
+        <span class="xp-toast-text">+<span id="xp-toast-amount">10</span> XP</span>
+    </div>
+
+    <!-- Achievement Unlock Notification -->
+    <div class="achievement-toast" id="achievement-toast">
+        <div class="achievement-toast-icon" id="achievement-toast-icon">🏆</div>
+        <div class="achievement-toast-content">
+            <span class="achievement-toast-title">Achievement Unlocked!</span>
+            <span class="achievement-toast-name" id="achievement-toast-name">First Analysis</span>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loader"></div>
+        <p>Analyzing code...</p>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Floating AI Chat Toggle Button -->
+    <button class="chat-toggle-btn" id="chat-toggle-btn" title="Open AI Chat">
+        <svg class="chat-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 011 1v3a1 1 0 01-1 1h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1H2a1 1 0 01-1-1v-3a1 1 0 011-1h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2zM7.5 13a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm9 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3z"/></svg>
+        <svg class="close-icon" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        <span class="chat-badge" id="chat-badge" style="display:none">1</span>
+    </button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // User dropdown handling
+        (function() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const userName = document.getElementById('user-name');
+            const userEmail = document.getElementById('user-email');
+            const userBtn = document.getElementById('user-btn');
+            const dropdownMenu = document.getElementById('dropdown-menu');
+            const logoutBtn = document.getElementById('logout-btn');
+            
+            if (user.name) {
+                userName.textContent = user.name;
+                userEmail.textContent = user.email;
+            }
+            
+            userBtn.addEventListener('click', () => {
+                dropdownMenu.classList.toggle('show');
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.user-dropdown')) {
+                    dropdownMenu.classList.remove('show');
+                }
+            });
+            
+            logoutBtn.addEventListener('click', () => {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/auth';
+            });
+        })();
+    </script>
+</body>
+</html>
